@@ -12,7 +12,7 @@ for (let run = 1; run <= 100; run++) {
   test.describe(`Inventory Page [run ${run}]`, () => {
     let login, inventory;
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page }) => { // Hooks 
       await page.goto(BASE_URL);
       login = new LoginPage(page);
       inventory = new InventoryPage(page);
