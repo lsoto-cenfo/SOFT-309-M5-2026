@@ -1,6 +1,10 @@
 name: Playwright Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches: ['**']   # run tests on every branch push
+    tags: ['v*']       # also run (and release) on version tags
+  pull_request:
 
 env:
   my_user: standard_user
@@ -8,23 +12,28 @@ env:
   my_performance_glitched_user: performance_glitch_user
 
 jobs:
-  test:
+
+  # ── Sharded: 8 machines in parallel ────────────────────────────────────────
+  # 800 tests ÷ 8 = 100 tests per machine.
+  # All 8 jobs start simultaneously — wall-clock ≈ time to run 100 tests.
+  sharded:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5.0.0
+      - uses: actions/checkout@v5.0.0
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4.4.0
+      - uses: actions/setup-node@v4.4.0
         with:
           node-version: '18'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Install Java
-        uses: actions/setup-java@v4.7.1
+      - uses: actions/setup-java@v4.7.1
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -35,14 +44,67 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium
 
-      - name: Run Playwright tests
-        run: npx playwright test
+      - name: Run tests (shard ${{ matrix.shard }} of 8)
+        run: npx playwright test --shard=${{ matrix.shard }}/8
 
       - name: Generate Allure report
         run: allure generate allure-assets -c --single-file
 
-      - name: Upload Allure report
-        uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@v4.6.2
         with:
-          name: allure-report
+          name: allure-report-shard-${{ matrix.shard }}
           path: allure-report/
+
+  # ── Release ─────────────────────────────────────────────────────────────────
+  # Only runs when a version tag (v*) is pushed AND all shards passed.
+  # Creates a GitHub Release named after the version in package.json.
+  #
+  # How to cut a release locally:
+  #   npm run release:patch   →  1.0.0 → 1.0.1  (bug fixes)
+  #   npm run release:minor   →  1.0.0 → 1.1.0  (new test cases)
+  #   npm run release:major   →  1.0.0 → 2.0.0  (breaking suite restructure)
+  #
+  # Each command bumps package.json, commits, tags, then pushes both.
+  release:
+    needs: sharded
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create the GitHub Release
+
+    steps:
+      - uses: actions/checkout@v5.0.0
+
+      - name: Read version from package.json
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      # Download every shard's Allure report so they're all attached to the release
+      - uses: actions/download-artifact@v4.3.0
+        with:
+          pattern: allure-report-shard-*
+          merge-multiple: false
+          path: release-artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Test Suite v${{ steps.pkg.outputs.version }}"
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## Test Suite v${{ steps.pkg.outputs.version }}
+
+            ### What's included
+            - 800 Playwright tests across 8 shards
+            - Allure reports per shard attached as artifacts
+
+            ### Run locally
+            ```bash
+            npm test                      # all tests, auto workers
+            npm run test:sequential       # 1 worker — slow baseline
+            npm run test:parallel         # 4 workers — fast local
+            npx playwright test --shard=1/8  # simulate one CI shard
+            ```
+          files: release-artifacts/**
+          draft: false
+          prerelease: false
