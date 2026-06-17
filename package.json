@@ -1,9 +1,17 @@
 {
   "name": "soft-309-m6-2025",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "npx playwright test",
+    "test:sequential": "npx playwright test --workers=1",
+    "test:parallel": "npx playwright test --workers=4",
+    "test:shard": "npx playwright test --shard=1/8",
+    "release:patch": "npm version patch && git push && git push --tags",
+    "release:minor": "npm version minor && git push && git push --tags",
+    "release:major": "npm version major && git push && git push --tags"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lsoto-cenfo/SOFT-309-M6-2025.git"
