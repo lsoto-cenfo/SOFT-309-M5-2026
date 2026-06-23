@@ -1,0 +1,30 @@
+name: Smoke Tests
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+env:
+  my_user: standard_user
+  my_password: secret_sauce
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Run smoke tests
+        run: npx playwright test --grep @smoke

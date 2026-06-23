@@ -1,0 +1,52 @@
+name: Scheduled Regression
+
+on:
+  schedule:
+    - cron: '0 8 * * *'    # 8:00 AM UTC
+    - cron: '0 20 * * *'   # 8:00 PM UTC
+  workflow_dispatch:
+
+env:
+  my_user: standard_user
+  my_password: secret_sauce
+  my_performance_glitched_user: performance_glitch_user
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Allure CLI
+        run: npm install -g allure-commandline --save-dev
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Run tests (shard ${{ matrix.shard }} of 8)
+        run: npx playwright test --shard=${{ matrix.shard }}/8
+
+      - name: Generate Allure report
+        run: allure generate allure-assets -c --single-file
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-shard-${{ matrix.shard }}
+          path: allure-report/
