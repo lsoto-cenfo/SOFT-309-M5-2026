@@ -5,6 +5,7 @@ on:
     branches: ['**']   # run tests on every branch push
     tags: ['v*']       # also run (and release) on version tags
   pull_request:
+  workflow_dispatch:
 
 env:
   my_user: standard_user
