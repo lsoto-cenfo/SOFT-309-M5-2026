@@ -14,6 +14,52 @@ env:
 
 jobs:
 
+  # ── Clase: análisis de resultados (fallos intencionales) ───────────────────
+  analisis-clase:
+    runs-on: ubuntu-latest
+    env:
+      CLASE_ANALISIS: '1'
+    steps:
+      - uses: actions/checkout@v5.0.0
+
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - uses: actions/setup-java@v4.7.1
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Allure CLI
+        run: npm install -g allure-commandline --save-dev
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Run análisis demo (@analisis)
+        run: npm run test:analisis
+        continue-on-error: true
+
+      - name: Generate Allure report
+        if: always()
+        run: allure generate allure-assets -c --single-file
+
+      - uses: actions/upload-artifact@v4.6.2
+        if: always()
+        with:
+          name: analisis-allure-report
+          path: allure-report/
+
+      - uses: actions/upload-artifact@v4.6.2
+        if: always()
+        with:
+          name: analisis-playwright-report
+          path: playwright-report/
+
   # ── Sharded: 8 machines in parallel ────────────────────────────────────────
   # 800 tests ÷ 8 = 100 tests per machine.
   # All 8 jobs start simultaneously — wall-clock ≈ time to run 100 tests.

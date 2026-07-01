@@ -10,6 +10,10 @@
     "test:shard": "npx playwright test --shard=1/8",
     "test:smoke": "npx playwright test --grep @smoke",
     "test:api": "npx playwright test tests/API/",
+    "test:analisis": "CLASE_ANALISIS=1 npx playwright test tests/analisis-demo.spec.js",
+    "report:pw": "npx playwright show-report playwright-report",
+    "report:allure": "allure generate allure-assets -c --single-file && allure open allure-report",
+    "report:allure:generate": "allure generate allure-assets -c --single-file",
     "release:patch": "npm version patch && git push && git push --tags",
     "release:minor": "npm version minor && git push && git push --tags",
     "release:major": "npm version major && git push && git push --tags"
