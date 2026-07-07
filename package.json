@@ -14,6 +14,7 @@
     "report:pw": "npx playwright show-report playwright-report",
     "report:allure": "allure generate allure-assets -c --single-file && allure open allure-report",
     "report:allure:generate": "allure generate allure-assets -c --single-file",
+    "security:zap": "bash scripts/zap-local.sh",
     "release:patch": "npm version patch && git push && git push --tags",
     "release:minor": "npm version minor && git push && git push --tags",
     "release:major": "npm version major && git push && git push --tags"

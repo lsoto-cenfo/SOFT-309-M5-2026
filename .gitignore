@@ -7,3 +7,5 @@ node_modules/
 /playwright/.cache/
 /allure-report/
 /allure-assets/
+/zap-report/
+/.zap-runtime/

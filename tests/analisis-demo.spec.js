@@ -17,18 +17,21 @@ const API_BASE = "https://dummyjson.com";
 // ── UI — SauceDemo ──────────────────────────────────────────────────────────
 
 test.describe("Análisis UI @analisis", () => {
-  test("OK: login exitoso y productos visibles @analisis", async ({ page }) => {
+let login, inventory;
+
+  test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
-    const login = new LoginPage(page);
+    login = new LoginPage(page);
+    inventory = new InventoryPage(page);
+  });
+
+  test("OK: login exitoso y productos visibles @analisis", async ({ page }) => {
     await login.doLogin("standard_user", "secret_sauce");
     await page.waitForURL("**/inventory.html");
     await expect(page.locator(".inventory_item").first()).toBeVisible();
   });
 
   test("FALLA: aserción incorrecta — espera 7 productos @analisis", async ({ page }) => {
-    await page.goto(BASE_URL);
-    const login = new LoginPage(page);
-    const inventory = new InventoryPage(page);
     await login.doLogin("standard_user", "secret_sauce");
     await page.waitForURL("**/inventory.html");
     await inventory.productItems.first().waitFor({ state: "visible" });
@@ -38,24 +41,17 @@ test.describe("Análisis UI @analisis", () => {
   });
 
   test("FALLA: credenciales inválidas — no llega al inventario @analisis", async ({ page }) => {
-    await page.goto(BASE_URL);
-    const login = new LoginPage(page);
     await login.doLogin("usuario_inexistente", "clave_mala");
     await expect(page.locator(".inventory_item").first()).toBeVisible();
   });
 
   test("FALLA: selector inexistente @analisis", async ({ page }) => {
-    await page.goto(BASE_URL);
-    const login = new LoginPage(page);
     await login.doLogin("standard_user", "secret_sauce");
     await page.waitForURL("**/inventory.html");
     await expect(page.locator(".producto-que-no-existe")).toBeVisible();
   });
 
   test("FALLA: lógica invertida en ordenamiento @analisis", async ({ page }) => {
-    await page.goto(BASE_URL);
-    const login = new LoginPage(page);
-    const inventory = new InventoryPage(page);
     await login.doLogin("standard_user", "secret_sauce");
     await page.waitForURL("**/inventory.html");
     await inventory.productItems.first().waitFor({ state: "visible" });
@@ -67,9 +63,6 @@ test.describe("Análisis UI @analisis", () => {
   });
 
   test("OK: badge del carrito tras agregar producto @analisis", async ({ page }) => {
-    await page.goto(BASE_URL);
-    const login = new LoginPage(page);
-    const inventory = new InventoryPage(page);
     await login.doLogin("standard_user", "secret_sauce");
     await page.waitForURL("**/inventory.html");
     await inventory.productItems.first().waitFor({ state: "visible" });
@@ -79,9 +72,6 @@ test.describe("Análisis UI @analisis", () => {
   });
 
   test("FALLA: URL incorrecta en detalle de producto @analisis", async ({ page }) => {
-    await page.goto(BASE_URL);
-    const login = new LoginPage(page);
-    const inventory = new InventoryPage(page);
     await login.doLogin("standard_user", "secret_sauce");
     await page.waitForURL("**/inventory.html");
     await inventory.productItems.first().waitFor({ state: "visible" });
